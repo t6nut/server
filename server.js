@@ -22,8 +22,8 @@ let influencers = [
 	},
 ];
 let managers = [
-	{ id: 1, name: 'Manager 1' },
-	{ id: 2, name: 'Manager 2' },
+	{ id: 1, name: 'James Bond' },
+	{ id: 2, name: 'Super Girl' },
 ];
 
 app.post('/influencers', (req, res) => {
