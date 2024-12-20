@@ -6,28 +6,28 @@ const port = 3001;
 app.use(cors({
 	origin: 'http://localhost:3000', // Allow requests from this origin
 }));
-
-
-// Updated influencer data structure
-let influencers = []; // Start with an empty array
-
-let employees = [
-	{ id: 1, name: 'Employee 1' },
-	{ id: 2, name: 'Employee 2' },
-];
-
 app.use(express.json());
+
+// Sample data
+let influencers = [
+	{
+		id: 1,
+		firstName: 'John',
+		lastName: 'Doe',
+		socialMediaAccounts: [
+			{ platform: 'instagram', username: 'john_doe' },
+			{ platform: 'tiktok', username: 'johndoe123' },
+		],
+		manager: null, // No manager initially
+	},
+];
+let managers = [
+	{ id: 1, name: 'Manager 1' },
+	{ id: 2, name: 'Manager 2' },
+];
 
 app.post('/influencers', (req, res) => {
 	const newInfluencer = req.body;
-
-	try {
-		// ... your existing influencer creation logic ...
-	} catch (error) { // Catch ALL errors within the endpoint
-		console.error("Error creating influencer:", error); // Log the error on the server
-		res.status(500).json({ error: error.message || 'Failed to create influencer.' }); // Send a JSON error response
-
-	}
 
 	// Validation
 	if (!newInfluencer.firstName || !newInfluencer.lastName) {
@@ -56,45 +56,61 @@ app.post('/influencers', (req, res) => {
 		return { platform, username };
 	});
 
-
 	// Assign ID
 	newInfluencer.id = influencers.length + 1;
 
-
 	influencers.push(newInfluencer);
-	res.status(201).json(newInfluencer);
+	res.status(201).json(newInfluencer); // Respond with the newly created influencer
 });
 
-// GET /influencers with filtering
+
+// GET /influencers (Fetch influencers list)
 app.get('/influencers', (req, res) => {
-	const filter = req.query.filter || ''; // Get the filter query parameter
-
-	const filteredInfluencers = influencers.filter((influencer) => {
-		// Filter by name (case-insensitive)
-		const fullName = `${influencer.firstName} ${influencer.lastName}`.toLowerCase();
-		return fullName.includes(filter.toLowerCase());
-		// Add manager filtering here if needed.
-	});
-
-
-	res.json(filteredInfluencers);
+	res.json(influencers);
 });
 
-
-// GET /employees  (provide employee data to the front-end)
-app.get('/employees', (req, res) => {
-	res.json(employees);
+// GET /managers (Fetch managers list)
+app.get('/managers', (req, res) => {
+	res.json(managers); // Use the globally defined managers array
 });
 
-// Add a general error handler for anything not caught by specific endpoint handlers
+// PATCH /influencers/:id/manager (Assign or remove a manager)
+app.patch('/influencers/:id/manager', (req, res) => {
+	const influencerId = parseInt(req.params.id, 10);
+	const { managerId } = req.body;
+
+	// Find the influencer by ID
+	const influencer = influencers.find((inf) => inf.id === influencerId);
+	if (!influencer) {
+		return res.status(404).json({ error: 'Influencer not found.' });
+	}
+
+	// If managerId is null, remove the manager
+	if (managerId === null) {
+		influencer.manager = null;
+	} else {
+		// Find the manager by ID
+		const manager = managers.find((emp) => emp.id === managerId);
+		if (!manager) {
+			return res.status(404).json({ error: 'Manager not found.' });
+		}
+		// Assign the manager
+		influencer.manager = { id: manager.id, name: manager.name };
+	}
+
+	res.json(influencer); // Return updated influencer
+});
+
+// 404 handler for unmatched routes
+app.use((req, res) => {
+	res.status(404).json({ error: 'Not Found' });
+});
+
+// General error handler for unexpected issues
 app.use((err, req, res, next) => {
-
-	console.error("Unhandled Server Error:", err);
+	console.error('Unhandled Server Error:', err);
 	res.status(500).json({ error: 'An unexpected server error occurred.' });
 });
 
-
-// ... other endpoints as needed (e.g., update influencer, assign manager)
-
+// Start the server
 app.listen(port, () => console.log(`Server listening on port ${port}`));
-
